@@ -184,8 +184,10 @@ async def play(_, message: Message):
                 reply_markup=InlineKeyboardMarkup(buttons),
             )
             return
-        mystic = await message.reply_text("🔍 **Searching**...")
-          query = message.text.split(None, 1)[1]
+        what = "Query Given"
+        await LOG_CHAT(message, what)
+        mystic = await message.reply_text("**🔎 Pencarian**")
+        query = message.text.split(None, 1)[1]
         user_id = message.from_user.id
         (
             title,

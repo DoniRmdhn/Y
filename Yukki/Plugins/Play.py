@@ -185,24 +185,37 @@ async def play(_, message: Message):
             )
             return
         mystic = await message.reply_text("🔍 **Searching**...")
-        query = message.text.split(None, 1)[1]
+          query = message.text.split(None, 1)[1]
+        user_id = message.from_user.id
         (
             title,
             duration_min,
             duration_sec,
             thumb,
             videoid,
-            views, 
-            channel
         ) = get_yt_info_query(query)
-        await mystic.delete()
-        buttons = url_markup(
-            videoid, duration_min, message.from_user.id, query, 0
-        )
-        return await message.reply_photo(
-            photo=thumb,
-            caption=f"🏷 **Name:**{title}\n**⏱Duration**: {duration_min} Mins\n🎧 **Request by:**{mention}\n\n[Get  Information](https://t.me/{BOT_USERNAME}?start=info_{videoid})",
+        a = VideosSearch(query, limit=5)
+        result = (a.result()).get("result")
+        title1 = (result[0]["title"])
+        duration1 = (result[0]["duration"])
+        title2 = (result[1]["title"])
+        duration2 = (result[1]["duration"])      
+        title3 = (result[2]["title"])
+        duration3 = (result[2]["duration"])
+        title4 = (result[3]["title"])
+        duration4 = (result[3]["duration"])
+        title5 = (result[4]["title"])
+        duration5 = (result[4]["duration"])
+        ID1 = (result[0]["id"])
+        ID2 = (result[1]["id"])
+        ID3 = (result[2]["id"])
+        ID4 = (result[3]["id"])
+        ID5 = (result[4]["id"])
+        buttons = search_markup(ID1, ID2, ID3, ID4, ID5, duration1, duration2, duration3, duration4, duration5, user_id, query)
+        return await mystic.edit(
+            f"**🎵 Choose The Result :**\n\n1️⃣ <b>[{title1[:25]}](https://www.youtube.com/watch?v={ID1})</b>\n ├ 💡 <u>[More Information](https://t.me/{BOT_USERNAME}?start=info_{ID1})</u>\n └ ⚡ __Powered by {BOT_NAME}__\n\n2️⃣ <b>[{title2[:25]}](https://www.youtube.com/watch?v={ID2})</b>\n ├ 💡 <u>[More Information](https://t.me/{BOT_USERNAME}?start=info_{ID2})</u>\n └ ⚡ __Powered by {BOT_NAME}__\n\n3️⃣ <b>[{title3[:25]}](https://www.youtube.com/watch?v={ID3})</b>\n ├ 💡 <u>[More Information](https://t.me/{BOT_USERNAME}?start=info_{ID3})</u>\n └ ⚡ __Powered by {BOT_NAME}__\n\n4️⃣ <b>[{title4[:25]}](https://www.youtube.com/watch?v={ID4})</b>\n ├ 💡 <u>[More Information](https://t.me/{BOT_USERNAME}?start=info_{ID4})</u>\n └ ⚡ __Powered by {BOT_NAME}__\n\n5️⃣ <b>[{title5[:25]}](https://www.youtube.com/watch?v={ID5})</b>\n ├ 💡 <u>[More Information](https://t.me/{BOT_USERNAME}?start=info_{ID5})</u>\n └ ⚡ __Powered by {BOT_NAME}__",    
             reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True
         )
 
 
@@ -210,6 +223,17 @@ async def play(_, message: Message):
 async def Music_Stream(_, CallbackQuery):
     if CallbackQuery.message.chat.id not in db_mem:
         db_mem[CallbackQuery.message.chat.id] = {}
+    try:
+        read1 = db_mem[CallbackQuery.message.chat.id]["live_check"]
+        if read1:
+            return await CallbackQuery.answer(
+                "Live Streaming Bermain...Hentikan Untuk Memutar Musik",
+                show_alert=True,
+            )
+        else:
+            pass
+    except:
+        pass
     callback_data = CallbackQuery.data.strip()
     callback_request = callback_data.split(None, 1)[1]
     chat_id = CallbackQuery.message.chat.id
@@ -218,29 +242,22 @@ async def Music_Stream(_, CallbackQuery):
     if str(duration) == "None":
         buttons = livestream_markup("720", videoid, duration, user_id)
         return await CallbackQuery.edit_message_text(
-            "**Live Stream Detected**\n\nWant to play live stream? This will stop the current playing musics(if any) and will start streaming live video.",
+            "**Live Stream Terdeteksi**\n\nIngin memainkan Live Streaming? Ini akan menghentikan pemutaran musik saat ini (jika ada) dan akan memulai streaming video langsung.",
             reply_markup=InlineKeyboardMarkup(buttons),
         )
     if CallbackQuery.from_user.id != int(user_id):
         return await CallbackQuery.answer(
-            "This is not for you! Search You Own Song.", show_alert=True
+            "Ini bukan untukmu! Cari lagu sendiri.", show_alert=True
         )
     await CallbackQuery.message.delete()
-    (
-        title,
-        duration_min,
-        duration_sec,
-        thumbnail,
-        views,
-        channel
-    ) = get_yt_info_id(videoid)
+    title, duration_min, duration_sec, thumbnail = get_yt_info_id(videoid)
     if duration_sec > DURATION_LIMIT:
         return await CallbackQuery.message.reply_text(
-            f"**Duration Limit Exceeded**\n\n**Allowed Duration: **{DURATION_LIMIT_MIN} minute(s)\n**Received Duration:** {duration_min} minute(s)"
+            f"**Batas durasi terlampaui**\n\n**Durasi yang diperbolehkan: **{DURATION_LIMIT_MIN} menit\n**Durasi yang diterima:** {duration_min} menit"
         )
     await CallbackQuery.answer(f"Processing:- {title[:20]}", show_alert=True)
     mystic = await CallbackQuery.message.reply_text(
-        f"**{MUSIC_BOT_NAME} Downloader**\n\n**Title:** {title[:50]}\n\n0% ▓▓▓▓▓▓▓▓▓▓▓▓ 100%"
+        f"**{MUSIC_BOT_NAME} Mendownload**\n\n**Judul:** {title[:50]}\n\n0% ▓▓▓▓▓▓▓▓▓▓▓▓ 100%"
     )
     downloaded_file = await loop.run_in_executor(
         None, download, videoid, mystic, title
